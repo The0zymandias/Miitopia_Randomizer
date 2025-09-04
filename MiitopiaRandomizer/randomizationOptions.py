@@ -13,7 +13,7 @@ from MiitopiaRandomizer.util import verify_input_files, copy_input_to_output, re
     get_data_file_path, get_csv_rows_from_file
 
 
-def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgrounds=True):
+def randomize_battles(is_switch: bool, randomize_music=True, only_battle_music=True, randomize_backgrounds=True):
     verify_input_files(required_files['battles'])
 
     logger = logging.getLogger('BattleRandomizer')
@@ -35,11 +35,28 @@ def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgroun
     for enemy_data in get_csv_rows_from_file(enemy_status_path):
         enemies.append((enemy_data[0], int(enemy_data[7])))
 
+'''
     # To assign boss faces properly, we need a list of all bosses and their faces
     boss_to_face_dict: dict[str, str] = {}
     for book_data in get_csv_rows_from_input_sarc('book.sarc', 'enemyBookInfo.csv'):
         if book_data[5]:
             boss_to_face_dict[book_data[0]] = book_data[5]
+'''
+    # this has a much more extensive list of what enemies requires faces than
+    # the journal book thing
+    # also, bosses that normally use 3 faces seem to work fine with just one
+    # so we don't need to keep track of that and can just give them one face
+    bosses_list = []
+    for enemy_data in get_csv_rows_from_input_sarc('enemy.sarc', 'enemyFaceConfig.csv'):
+        if enemy_data[9] == "All" and enemy_data[0] not in bosses_list:
+            bosses_list.append(enemy_data[0])
+    # Whenever we need a face for a boss, just pull one from here. This fixes graphical
+    # problems when a mii hasn't been cast for a role but their face is needed for a
+    # boss. As we go through battle files, we add any faces we find attached to bosses
+    # since they must be cast already. Started with some faces already in the list
+    # since they will be cast by the time the player gets to levels that are affected
+    # by the randomizer
+    npc_faces_for_bosses = ["Town00_Child", "Photographer", "Quizman", "Postman", "Gourmet", "Amiibowoman00"]
 
     backgrounds: list[str] = []
     for bg_data in get_csv_rows_from_input_sarc('bg.sarc', 'BGData.csv'):
@@ -49,9 +66,11 @@ def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgroun
     backgroundmusic: list[str] = []
     for bgm_data in get_csv_rows_from_input_sarc('sound.sarc', 'BgmList.csv'):
         # Don't add Jingles (starting with JGL)
-        if bgm_data[0].startswith('BGM'):
-            if not bgm_data[0].startswith('BGM_MAPINTRO'):
-                backgroundmusic.append(bgm_data[0])
+        if bgm_data[0].startswith('BGM') and not bgm_data[0].startswith('BGM_MAPINTRO'):
+          if only_battle_music:
+            if (not bgm_data[0].startswith("BGM_BATTLE")) or bg_data[0] == "BGM_BATTLE_RESULT":
+              continue
+          backgroundmusic.append(bgm_data[0])
 
     world_files_to_randomize = [os.path.join('stage', f'World{i:02}.sarc') for i in range(1, world_limit+1)]
 
@@ -108,6 +127,11 @@ def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgroun
                     # TODO: Make enemies with specified faces randomized too
                     if ',' in enemy_name:
                         randomized_row[enemy_index] = row[enemy_index]
+                        # first string in the list is the enemy name
+                        used_faces = enemy_name.split(",")[1:]
+                        for face in used_faces:
+                          if face not in npc_faces_for_bosses:
+                            npc_faces_for_bosses.append(face)
                         continue
 
                     # Pick a random enemy out of all of them that has a similar level
@@ -121,10 +145,9 @@ def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgroun
                     # 9/3/25: Stop randomizing to dragon enemies on 3ds bc it causes crashes
                     while new_enemy == 'Goblin0_Dish' or (is_3ds and new_enemy.find("Dragon") != -1):
                         new_enemy = random.choice(new_enemies)
-                    # If the new enemy is a boss with a set face, add its face
-                    if new_enemy in boss_to_face_dict:
-                        face_to_add = boss_to_face_dict[new_enemy]
-                        new_enemy += f',{face_to_add}'
+                    # If the new enemy needs a face, give it a face
+                    if new_enemy in bosses_list:
+                        new_enemy += f',{random.choice(npc_faces_for_bosses)}'
                     # Store this new random enemy
                     randomized_row[enemy_index] = new_enemy
                 # Clear out remaining enemy cells
