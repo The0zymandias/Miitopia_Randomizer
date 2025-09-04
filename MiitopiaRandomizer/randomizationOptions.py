@@ -353,108 +353,28 @@ def randomize_grub():
         for j in range(2, 13):
             row[j] = ''
         # Do randomization for all base stuff
-        row[2] = random.choice(possible_grub_stats)
-        row[3] = random.choice(grub_exp)
         row[14] = random.choice(tastiness)
         row[15] = random.choice(fullness)
         row[17] = random.choice(grub_sound_effect)
-        # As always, my code is messy lol
-        # TODO: Make it so it doesn't add
-        # duplicate stats (like 2 ATK entries, etc)
-        match row[16]:
-            case 'Normal':
-                logger.info('Normal Rarity')
-                # Num between 0 and 1, do an extra row of states if 1
-                if random.randint(0, 1) == 1:
-                    logger.info('Adding extra stat to Normal Rarity Grub...')
-                    row[4] = random.choice(possible_grub_stats)
-                    row[5] = random.choice(grub_exp)
-            case 'Rare':
-                # Rare Rarity Grub
-                randGrub = random.randint(0, 3)
-                logger.info('Rare Rarity')
-                # Add 1 extra stat
-                if randGrub == 1:
-                    logger.info('Adding extra stat to Rare Rarity Grub...')
-                    row[4] = random.choice(possible_grub_stats)
-                    row[5] = random.choice(grub_exp)
-                # Add 2 extra Stats
-                elif randGrub == 2:
-                    logger.info('Adding 2 extra stats to Rare Rarity Grub...')
-                    row[4] = random.choice(possible_grub_stats)
-                    row[5] = random.choice(grub_exp)
-                    row[6] = random.choice(possible_grub_stats)
-                    row[7] = random.choice(grub_exp)
-                # Add 3 extra stats
-                elif randGrub == 3:
-                    logger.info('Adding 3 extra stats to Rare Rarity Grub...')
-                    i = 4
-                    for i in range (i, 8):
-                        if i != 4:
-                            i += 1 # Must be every other row
-                        row[i] = random.choice(possible_grub_stats)
-                    e = 5 
-                    for e in range (e, 9):
-                        if e == 6 or e == 8:
-                            e +=1
-                        row[e] = random.choice(grub_exp)
-            # Super Rare Grub
-            case 'SuperRare':
-                randGrub = random.randint(0, 5)
-                logger.info('SuperRare Rarity')
-                # Add 1 extra stat
-                if randGrub == 1:
-                    logger.info('Adding extra stat to SuperRare Rarity Grub...')
-                    row[4] = random.choice(possible_grub_stats)
-                    row[5] = random.choice(grub_exp)
-                # Add 2 extra stats
-                elif randGrub == 2:
-                    logger.info('Adding 2 extra stats to SuperRare Rarity Grub...')
-                    row[4] = random.choice(possible_grub_stats)
-                    row[5] = random.choice(grub_exp)
-                    row[6] = random.choice(possible_grub_stats)
-                    row[7] = random.choice(grub_exp)
-                # add 3 extra stats
-                elif randGrub == 3:
-                    logger.info('Adding 3 extra stats to Rare Rarity Grub...')
-                    i = 4
-                    for i in range (i, 8):
-                        if i != 4:
-                            i += 1 # Must be every other row
-                        row[i] = random.choice(possible_grub_stats)
-                    e = 5 
-                    for e in range (e, 9):
-                        if e == 6 or e == 8:
-                            e +=1
-                        row[e] = random.choice(grub_exp)
-                # add 4 extra stats
-                elif randGrub == 4:
-                    logger.info('Adding 4 extra stats to Rare Rarity Grub...')
-                    i = 4
-                    for i in range (i, 10):
-                        if i != 4:
-                            i += 1 # Must be every other row
-                        row[i] = random.choice(possible_grub_stats)
-                    e = 5 
-                    for e in range (e, 11):
-                        if e == 6 or e == 8 or e == 10:
-                            e +=1
-                        row[e] = random.choice(grub_exp)
-                # add 5 extra stats
-                elif randGrub == 5:
-                    logger.info('Adding 5 extra stats to SuperRare Rarity Grub...')
-                    i = 4
-                    for i in range (i, 12):
-                        if i != 4:
-                            i += 1 # Must be every other row
-                        row[i] = random.choice(possible_grub_stats)
-                    e = 5 
-                    for e in range (e, 13):
-                        if e == 6 or e == 8 or e == 10 or e == 12:
-                            e +=1
-                        row[e] = random.choice(grub_exp)
-            #case _:
-                #logger.info('Meow')
+        # make a shallow copy to pop stat increases from, this
+        # is used to prevent duplicating stat increases
+        temp_grub_stats = possible_grub_stats.copy()
+
+        num_max_stat_increases = 2
+        if row[16] == "Rare":
+            num_max_stat_increases = 4
+        elif row[16] == "SuperRare":
+            num_max_stat_increases = 6
+
+        logger.info(f'{row[16]} Rarity')
+        num_stat_increases = random.randint(1, num_max_stat_increases)
+        logger.info(f'Adding {randGrub} extra stat(s) to Rare Rarity Grub...')
+
+        for i in range(0, num_stat_increases):
+            col_stat = 2 + i * 2
+            col_exp = col_stat + 1
+            row[col_stat] = temp_grub_stats.pop( random.randint(0, len(temp_grub_stats)-1) )
+            row[col_exp] = random.choice(grub_exp)
 
         csv_writer.writerow(row)
 
