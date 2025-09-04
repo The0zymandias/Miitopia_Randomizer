@@ -118,7 +118,8 @@ def randomize_battles(is_switch: bool, randomize_music=True, randomize_backgroun
                     # Get all enemies with this new level
                     new_enemies = [enemy[0] for enemy in enemies if enemy[1] == random_level]
                     new_enemy = random.choice(new_enemies)
-                    while new_enemy == 'Goblin0_Dish':
+                    # 9/3/25: Stop randomizing to dragon enemies on 3ds
+                    while new_enemy == 'Goblin0_Dish' or (is_3ds and new_enemy.find("Dragon") != -1):
                         new_enemy = random.choice(new_enemies)
                     # If the new enemy is a boss with a set face, add its face
                     if new_enemy in boss_to_face_dict:
