@@ -329,7 +329,7 @@ def randomize_grub():
     logger = logging.getLogger('GrubRandomizer')
     logger.info('Randomizing Grub...')
 
-    possible_grub_stats = [
+    all_grub_stats = [
         'HP', 'ATK', 'MP', 'MAG', 'SPD', 'DEF'
     ]
     grub_exp = [
@@ -356,24 +356,27 @@ def randomize_grub():
         row[14] = random.choice(tastiness)
         row[15] = random.choice(fullness)
         row[17] = random.choice(grub_sound_effect)
+
         # make a shallow copy to pop stat increases from, this
         # is used to prevent duplicating stat increases
-        temp_grub_stats = possible_grub_stats.copy()
+        possible_grub_stats = all_grub_stats.copy()
+        grub_rarity = row[16]
+
+        num_min_stat_increases = 1
 
         num_max_stat_increases = 2
-        if row[16] == "Rare":
+        if grub_rarity == "Rare":
             num_max_stat_increases = 4
-        elif row[16] == "SuperRare":
+        elif grub_rarity == "SuperRare":
             num_max_stat_increases = 6
 
-        logger.info(f'{row[16]} Rarity')
-        num_stat_increases = random.randint(1, num_max_stat_increases)
-        logger.info(f'Adding {randGrub} extra stat(s) to Rare Rarity Grub...')
+        num_stat_increases = random.randint(num_min_stat_increases, num_max_stat_increases)
+        logger.info(f'Adding {num_stat_increases} extra stat(s) to {grub_rarity} Rarity Grub...')
 
         for i in range(0, num_stat_increases):
             col_stat = 2 + i * 2
             col_exp = col_stat + 1
-            row[col_stat] = temp_grub_stats.pop( random.randint(0, len(temp_grub_stats)-1) )
+            row[col_stat] = possible_grub_stats.pop( random.randint(0, len(temp_grub_stats)-1) )
             row[col_exp] = random.choice(grub_exp)
 
         csv_writer.writerow(row)
