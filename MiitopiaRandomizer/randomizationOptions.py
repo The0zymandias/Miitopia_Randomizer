@@ -19,6 +19,8 @@ def randomize_battles(is_switch: bool, randomize_music=True, only_battle_music=T
     logger = logging.getLogger('BattleRandomizer')
     logger.info('Randomizing battles...')
 
+    is_3ds = not is_switch
+
     if is_switch:
         copy_input_to_output('enemy.sarc')
         # FIXME: Why do we do this?
