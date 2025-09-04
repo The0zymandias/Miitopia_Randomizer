@@ -37,13 +37,13 @@ def randomize_battles(is_switch: bool, randomize_music=True, only_battle_music=T
     for enemy_data in get_csv_rows_from_file(enemy_status_path):
         enemies.append((enemy_data[0], int(enemy_data[7])))
 
-'''
-    # To assign boss faces properly, we need a list of all bosses and their faces
-    boss_to_face_dict: dict[str, str] = {}
-    for book_data in get_csv_rows_from_input_sarc('book.sarc', 'enemyBookInfo.csv'):
-        if book_data[5]:
-            boss_to_face_dict[book_data[0]] = book_data[5]
-'''
+    '''
+        # To assign boss faces properly, we need a list of all bosses and their faces
+        boss_to_face_dict: dict[str, str] = {}
+        for book_data in get_csv_rows_from_input_sarc('book.sarc', 'enemyBookInfo.csv'):
+            if book_data[5]:
+                boss_to_face_dict[book_data[0]] = book_data[5]
+    '''
     # this has a much more extensive list of what enemies requires faces than
     # the journal book thing
     # also, bosses that normally use 3 faces seem to work fine with just one
@@ -123,10 +123,7 @@ def randomize_battles(is_switch: bool, randomize_music=True, only_battle_music=T
                         break
 
                     # If the enemy name has a comma, the 2nd part is used to specify the enemy's face(s)?
-                    # Currently, we skip these enemies since AFAIK there are some enemies that can hold multiple
-                    # faces and I don't think every enemy supports that so we'd end up with a mess if we randomized
-                    # them
-                    # TODO: Make enemies with specified faces randomized too
+                    # Currently, we skip these
                     if ',' in enemy_name:
                         randomized_row[enemy_index] = row[enemy_index]
                         # first string in the list is the enemy name
@@ -485,9 +482,8 @@ def randomize_colors():
             csv_writer.writerow(row)
             continue
 
-        row[1] = random.randint(0, 255)
-        row[2] = random.randint(0, 255)
-        row[3] = random.randint(0, 255)
+        for i in range(1, 4):
+            row[i] = random.randint(0, 255)
 
         csv_writer.writerow(row)
 
@@ -498,3 +494,40 @@ def randomize_colors():
     write_sarc_to_output(sarc_writer, 'equipment.sarc')
 
     logger.info('Randomized Equipment Colors')
+
+def randomize_inn(is_switch: bool, randomize_rooms=True):
+    logger = logging.getLogger("InnRoomRandomizer")
+    logger.info("Randomizing Inn Rooms...")
+    # TODO: Add verification for needed files
+    randomized_data = StringIO()
+    csv_writer = csv.writer(randomized_data)
+
+    # TODO: Check to see if there are unused stables aside from Stable00
+    # that can be randomized to on the switch
+    room_col, meal_col = 6, 7
+    if is_switch:
+        room_col, meal_col = 7, 9
+
+    if randomize_rooms:
+        source_rows = get_csv_rows_from_input_sarc('bg.sarc', 'BGData.csv')
+        for row in source_rows:
+
+            random_room_str = f"Room{random.randint(0, 8):02d}"
+            random_meal_str = f"Meal{random.randint(0, 8):02d}"
+
+            if row[room_col] != "":
+                row[room_col] = random_room_str
+            if row[meal_col] != "":
+                row[meal_col] = random_meal_str
+
+            csv_writer.writerow(row)
+
+        copy_input_to_output('bg.sarc')
+        sarc_writer = get_writer_from_output_sarc('bg.sarc')
+        randomized_data.seek(0)
+        sarc_writer.add_file("BGData.csv", randomized_data.read().encode())
+        write_sarc_to_output(sarc_writer, 'bg.sarc')
+    logger.info("Randomized Inn Rooms")
+
+
+
